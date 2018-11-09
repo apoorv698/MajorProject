@@ -1,6 +1,6 @@
 # MajorProject
 
-##Age Determination using Face Image - Major Project
+## Age Determination using Face Image - Major Project
 
 Weights can be downloaded from (https://drive.google.com/open?id=10_CRhpnMil1pA_MhewQez1mM3u7loEJm)
 
