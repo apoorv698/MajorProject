@@ -1,11 +1,9 @@
-import queue 
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
 import tkinter as ttk
 import time
 import threading
-from tkinter.ttk import Progressbar
 import cv2
 import os
 
@@ -14,80 +12,16 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 from keras import backend as k
-from keras.models import Sequential
-from keras.layers import Activation
-from keras.layers.convolutional import MaxPooling2D, Conv2D
-from keras.layers.core import Dense, Dropout, Flatten
-from keras.layers import BatchNormalization
-from keras.metrics import categorical_crossentropy
-from keras.callbacks import ModelCheckpoint
-from keras.optimizers import adam
-from keras.utils import np_utils
-from keras.preprocessing.image import img_to_array
+from keras.models import load_model
 import tensorflow as tf
 
 graph = tf.get_default_graph()
 
-img_channels = 1
 img_w = 75
 img_h = 75
-classes = 93
-filters = 32
-pool = 3
-conv = 3
-chanDim = -1
-weight_dir = 'weights/'
-
-def make_model():
-	global filters,conv, img_w, img_h, img_channels, pool
-	model = Sequential()
-	model.add(Conv2D(filters, (conv, conv), padding="same", input_shape=(img_w, img_h, img_channels)))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(MaxPooling2D(pool_size=(pool, pool)))
-	model.add(Dropout(0.2))
-
-	pool -= 1
-	filters *= 2
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(MaxPooling2D(pool_size=(pool, pool)))
-	model.add(Dropout(0.2))
-
-	filters *= 2
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(MaxPooling2D(pool_size=(pool, pool)))
-	model.add(Dropout(0.2))
-
-	filters *= 2
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(Conv2D(filters, (conv, conv), padding="same"))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization(axis=chanDim))
-	model.add(MaxPooling2D(pool_size=(pool, pool)))
-	model.add(Dropout(0.2))
-
-	filters *= 4
-	model.add(Flatten())
-	model.add(Dense(filters))
-	model.add(Activation("relu"))
-	model.add(BatchNormalization())
-	model.add(Dropout(0.5))
-	model.add(Dense(classes))
-	model.add(Activation("softmax"))   
-
-	return model
+weight_dir = os.path.join(os.getcwd(), 'weights/')
+model_name = 'face_model.h5'
+model_dir = os.path.join(os.getcwd(), 'models/')
 
 class GUI:
 	def __init__(self,root, model):
@@ -110,15 +44,19 @@ class GUI:
 		self.btn_quit = Button(self.root, text='Quit', command = lambda : self.root.destroy())
 		self.btn_quit.grid(column=6,row=3, padx=3, pady=3, sticky=S)
 
-		self.filename = 'upload-image/sample-image.jpg'
-		image = Image.open(self.filename)
-		baseheight = 200
-		hpercent = (baseheight / float(image.size[1]))
-		wsize = int((float(image.size[0]) * float(hpercent)))
-		image = image.resize((wsize, baseheight), Image.ANTIALIAS)
-		image = ImageTk.PhotoImage(image)
-		self.panel = Label(image=image)
-		self.panel.image = image
+		try:
+			self.filename = 'testing-image/sample-image.jpg'
+			image = Image.open(self.filename)
+			baseheight = 200
+			hpercent = (baseheight / float(image.size[1]))
+			wsize = int((float(image.size[0]) * float(hpercent)))
+			image = image.resize((wsize, baseheight), Image.ANTIALIAS)
+			image = ImageTk.PhotoImage(image)
+			self.panel = Label(image=image)
+			self.panel.image = image
+		except Exception as e:
+			print('ERROR: ',e)
+			pass
 		self.panel.grid(column=3, row=1, columnspan=2)
 
 		self.label_predicted_age = Label(self.root, text='Predicited Age-')
@@ -237,5 +175,5 @@ class GUI:
 if __name__=='__main__':
 	os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 	root = Tk()
-	model = make_model()
+	model = load_model(model_dir+model_name)
 	main_ui = GUI(root, model)
