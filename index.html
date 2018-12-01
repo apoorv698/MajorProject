@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Find your Age</title>
+    <style>
+    #container {
+      margin: 0px auto;
+      width: 440px;
+      height: 375px;
+      border: 10px #333 solid;
+    }
+    #videoElement {
+      width: 440px;
+      height: 375px;
+      background-color: #666;
+    }
+    div#loading {
+      width: 50px;
+      height: 35px;
+      background: url(/static/ajax-loader.gif) no-repeat;
+      cursor: wait;
+      position : absolute;
+      top : 50%;
+      left : 50%;
+    }
+    </style>
+  </head>
+
+  <body onload="initLoading();">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <div id="loading"></div>
+    <div id="content">    
+      <div id="container">
+      <video autoplay="true" id="videoElement"></video>
+      <br>
+      <br>
+      <center>
+        <table>
+          <tr>
+          <td><button onclick="return stopCam();">Stop Camera</button></td>
+          <td><button onclick="return predict();">Predict</button></td>
+          <!--<td><form method = "post">
+              <input type="submit" value="Predict" onclick="predict();">
+            </form>
+          </td>-->
+          </tr>
+        </table>
+      </center>
+      </div>
+    </div>
+    <canvas  id="myCanvas" width="440" height="375"></canvas>
+
+    <script>
+      var video = document.querySelector("#videoElement");
+      var webstream;
+      var canvas = document.getElementById("myCanvas");
+      var ctx = canvas.getContext('2d');
+      if (navigator.mediaDevices.getUserMedia) {       
+          navigator.mediaDevices.getUserMedia({video: true})
+        .then(function(stream) {
+          video.srcObject = stream;
+      	webstream = stream;
+        })
+        .catch(function(err0r) {
+          console.log("Something went wrong!");
+        });
+      }
+
+      function initLoading()
+      {
+        $("#loading").hide();
+      }
+
+      function stopCam()
+      {
+        webstream.getTracks()[0].stop();
+      }
+
+      function predict()
+      {
+        $("#loading").show();
+        ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+        var dataURL = canvas.toDataURL();
+        canvas.style.display="none";
+        var num = 10;
+        /*console.log(dataURL);
+        console.log(num);*/
+        $.ajax({
+            type: "POST",
+            data:{
+            image: dataURL,
+            number: num
+          }
+          }).done(function() {
+            console.log('sent');
+            document.location.href='/result';
+        });
+        $("#content").hide();    
+      }
+
+    </script>
+  </body>
+</html>
