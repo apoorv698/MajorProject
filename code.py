@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 from keras import backend as k
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Activation
 from keras.layers.convolutional import MaxPooling2D, Conv2D
 from keras.layers.core import Dense, Dropout, Flatten
@@ -27,6 +27,10 @@ filters = 32
 pool = 3
 conv = 3
 chanDim = -1
+weight_dir = os.path.join(os.getcwd(), 'weights/') 
+model_name = 'face_model.h5'
+model_dir = os.path.join(os.getcwd(), 'models/')
+testing_dir = os.path.join(os.getcwd(), 'testing-image/')
 
 def prepare_data():
     train_path = 'C:/Users/apoov/face2AgeDetect-Major/UTKFace/'
@@ -128,8 +132,11 @@ def plot_graphs(history):
     plt.show()
 
 def make_pridiction(model):
-    testing_dir ='upload-image/'
+    count=0
+    t_error=0
     for filename in os.listdir(testing_dir):
+        if filename.split('_')[0]=='1':
+            continue
         pic = cv2.imread(testing_dir+filename)
         gray = cv2.cvtColor(pic,cv2.COLOR_BGR2GRAY)
         face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -166,14 +173,19 @@ def make_pridiction(model):
             sum+=ynew[0]
         # show the inputs and predicted outputs
         predicted_age = sum/counter
+        
         try:
             error = round(abs(int(filename.split('_')[0]) - predicted_age),2)
             print("Predicted Age = %s with error = %s of yrs for image %s" % (round(predicted_age), error,filename))
+            t_error += abs(int(filename.split('_')[0]) - predicted_age)
+            count+=1
             # if error>3:
             #     os.remove(testing_dir+filename)
             #     print('deleted!!')
         except:
             print("Predicted Age = %s for image %s" % (round(predicted_age), filename))
+
+        print('Total error: ',t_error,'Avg error: ',t_error/count)
 
 
 
@@ -181,49 +193,64 @@ if __name__ == '__main__':
 
     os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 
-    data_dir = os.path.join(os.getcwd(), 'data')
-
-    X_train_path = os.path.join(data_dir, 'X_train.npy')
-    X_test_path = os.path.join(data_dir, 'X_test.npy')
-    y_train_path = os.path.join(data_dir, 'y_train.npy')
-    y_test_path = os.path.join(data_dir, 'y_test.npy')
-
-    if not os.path.exists(data_dir):
-        print('--Processed data does not exists. Preparing data.--')
-        os.mkdir(data_dir)
-        X_train, X_test, y_train, y_test = prepare_data()
-        print('--Preprocessing Complete.--')
-        np.save(X_train_path, X_train)
-        np.save(X_test_path, X_test)
-        np.save(y_train_path, y_train)
-        np.save(y_test_path, y_test)
-    else:
-        print('--Loading Processed data.--')
-        X_train = np.load(X_train_path)
-        X_test = np.load(X_test_path)
-        y_train = np.load(y_train_path)
-        y_test = np.load(y_test_path)
-
-    Y_train = np_utils.to_categorical(y_train, classes)
-    Y_test = np_utils.to_categorical(y_test, classes)
-
-    print('--Datasets prepared.--')
-
-    model = make_model()
-
-    model.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
-
-    print('--Model prepared.--')
-
-    weight_dir = os.path.join(os.getcwd(), 'weights/')
-    # filepath="weights_best.hdf5"
-    filepath = "weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
-    
     if len(os.listdir(weight_dir))==0:
-        checkpoint = ModelCheckpoint(weight_dir+filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-        callbacks_list = [checkpoint]
-        history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epoch, callbacks=callbacks_list, verbose=1, validation_data=(X_test, Y_test))
-        plot_graphs(history)
+
+        data_dir = os.path.join(os.getcwd(), 'data')
+
+        X_train_path = os.path.join(data_dir, 'X_train.npy')
+        X_test_path = os.path.join(data_dir, 'X_test.npy')
+        y_train_path = os.path.join(data_dir, 'y_train.npy')
+        y_test_path = os.path.join(data_dir, 'y_test.npy')
+
+        if not os.path.exists(data_dir):
+            print('--Processed data does not exists. Preparing data.--')
+            os.mkdir(data_dir)
+            X_train, X_test, y_train, y_test = prepare_data()
+            print('--Preprocessing Complete.--')
+            np.save(X_train_path, X_train)
+            np.save(X_test_path, X_test)
+            np.save(y_train_path, y_train)
+            np.save(y_test_path, y_test)
+        else:
+            print('--Loading Processed data.--')
+            X_train = np.load(X_train_path)
+            X_test = np.load(X_test_path)
+            y_train = np.load(y_train_path)
+            y_test = np.load(y_test_path)
+
+        Y_train = np_utils.to_categorical(y_train, classes)
+        Y_test = np_utils.to_categorical(y_test, classes)
+
+        print('--Datasets prepared.--')
+
+        if len(os.listdir(model_dir))==0:
+            model = make_model()
+            model.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
+            model.save(model_dir+model_name)
+            print('--Model prepared.--')
+        else:
+            print('--Using saved Model.--')
+            model = load_model(model_dir+model_name)
+
+        # filepath="weights_best.hdf5"
+        filepath = "weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+        
+        if len(os.listdir(weight_dir))==0:
+            checkpoint = ModelCheckpoint(weight_dir+filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+            callbacks_list = [checkpoint]
+            history = model.fit(X_train, Y_train, batch_size=batch_size, epochs=epoch, callbacks=callbacks_list, verbose=1, validation_data=(X_test, Y_test))
+            plot_graphs(history)
+    else:
+
+        if len(os.listdir(model_dir))==0:
+            model = make_model()
+            model.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
+            model.save(model_dir+model_name)
+            print('--Model prepared.--')
+        else:
+            print('--Using saved Model.--')
+            model = load_model(model_dir+model_name)
+
 
     print('--Making Predictions.--')
 

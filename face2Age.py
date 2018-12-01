@@ -1,32 +1,16 @@
 import cv2
 import time
 import os
-
 import numpy as np
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 from keras import backend as k
-from keras.models import Sequential
-from keras.layers import Activation
-from keras.layers.convolutional import MaxPooling2D, Conv2D
-from keras.layers.core import Dense, Dropout, Flatten
-from keras.layers import BatchNormalization
-from keras.metrics import categorical_crossentropy
-from keras.callbacks import ModelCheckpoint
-from keras.optimizers import adam
-from keras.utils import np_utils
-from keras.preprocessing.image import img_to_array
+from keras.models import load_model
 
-img_channels = 1
 img_w = 75
 img_h = 75
-classes = 93
-filters = 32
-pool = 3
-conv = 3
-chanDim = -1
-weight_dir = 'weights/'
+weight_dir = os.path.join(os.getcwd(), 'weights/')
+model_name = 'face_model.h5'
+model_dir = os.path.join(os.getcwd(), 'models/')
 
 def predict(model, pic):
     global weight_dir
@@ -36,6 +20,7 @@ def predict(model, pic):
     gray_img = np.array([gray_img])
     sum=0.0
     counter=0.0
+    print("Pridicting...")
     for wt in os.listdir(weight_dir):
         counter+=1.0
         model.load_weights(weight_dir+wt)
@@ -45,65 +30,12 @@ def predict(model, pic):
     return predicted_age
 
 
-def make_model():
-    global filters,conv, img_w, img_h, img_channels, pool
-    model = Sequential()
-    model.add(Conv2D(filters, (conv, conv), padding="same", input_shape=(img_w, img_h, img_channels)))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(MaxPooling2D(pool_size=(pool, pool)))
-    model.add(Dropout(0.2))
-
-    pool -= 1
-    filters *= 2
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(MaxPooling2D(pool_size=(pool, pool)))
-    model.add(Dropout(0.2))
-
-    filters *= 2
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(MaxPooling2D(pool_size=(pool, pool)))
-    model.add(Dropout(0.2))
-
-    filters *= 2
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(Conv2D(filters, (conv, conv), padding="same"))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization(axis=chanDim))
-    model.add(MaxPooling2D(pool_size=(pool, pool)))
-    model.add(Dropout(0.2))
-
-    filters *= 4
-    model.add(Flatten())
-    model.add(Dense(filters))
-    model.add(Activation("relu"))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    model.add(Dense(classes))
-    model.add(Activation("softmax"))
-
-    # print(model.summary())
-
-    return model
-
 if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') 
     cap = cv2.VideoCapture(0) 
-    model = make_model()
+    model = load_model(model_dir+model_name)
     font = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (10,400)
     fontScale = 1
@@ -130,7 +62,7 @@ if __name__ == '__main__':
             print("Approximate face Age is "+str(age))
             cv2.putText(img,'Approx. Age = '+str(age), bottomLeftCornerOfText,font, fontScale, fontColor, lineType)
             cv2.imshow('Age',img)
-        except:
+        except Exception as e:
             cv2.imshow('Age', img)
         # Wait for Esc key to stop 
         k = cv2.waitKey(30) & 0xff
