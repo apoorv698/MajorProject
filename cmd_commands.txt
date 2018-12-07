@@ -1,0 +1,6 @@
+cd..
+cd..
+cd python35/Scripts/env/Scripts
+activate.bat
+cd..
+new-gui.py

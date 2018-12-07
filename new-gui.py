@@ -27,7 +27,7 @@ img_h = 75
 model_name = 'face_model.h5'
 
 # storing different path
-weight_dir = os.path.join(os.getcwd(), 'weights/')
+weight_dir = os.path.join(os.getcwd(), 'wieghts/')
 model_dir = os.path.join(os.getcwd(), 'models/')
 
 class GUI:
@@ -125,14 +125,12 @@ class GUI:
 
 		try:
 			# running when face is found
-
 			print('using face only')
 			gray_img = cv2.resize(roi, (img_w,img_h))
 			gray_img = np.expand_dims(gray_img, axis=2)
 			gray_img = np.array([gray_img])/255.0
 		except:
 			# running when face is not found
-
 			print('Unable to find face')
 			print('using whole picture')
 			gray = cv2.resize(gray, (img_w,img_h))
@@ -155,7 +153,7 @@ class GUI:
 				sum+=ynew[0]
 		
 		# finding predicted age
-
+		print(sum, counter)
 		predicted_age = sum/counter
 		
 		return predicted_age

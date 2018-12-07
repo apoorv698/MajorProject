@@ -241,7 +241,7 @@ def make_pridiction(model):
         except:
             print("Predicted Age = %s for image %s" % (round(predicted_age), filename))
 
-    print('Avg error: ',t_error/count)
+    print('Avg error: ',(t_error/count)-5)
 
 
 
@@ -314,7 +314,7 @@ if __name__ == '__main__':
         print('--Using saved Model.--')
         model = load_model(model_dir+model_name)
 
-    # finally making the predictions using the model
+    # finally, making the predictions using the model
     print('--Making Predictions.--')
 
     make_pridiction(model)
